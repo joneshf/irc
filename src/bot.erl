@@ -1,7 +1,12 @@
 -module(bot).
--compile(export_all).
+-author("Hardy Jones <jones3.hardy@gmail.com>").
 
-connect(Password) ->
+-export([connect/0]).
+
+close(Socket) ->
+    gen_tcp:close(Socket).
+
+connect() ->
     Host = "chat.freenode.net",
     Port = 6667,
     {ok, Socket} = gen_tcp:connect(Host, Port, [{active, false}]),
@@ -9,29 +14,38 @@ connect(Password) ->
     gen_tcp:send(Socket, "NICK confabbot\r\n"),
     gen_tcp:send(Socket, "USER confabbot confabbot confabbot :confabbot\r\n"),
     gen_tcp:send(Socket, "JOIN #confab\r\n"),
-    Identify = string:join(["PRIVMSG confab :identify", Password], " "),
-    gen_tcp:send(Socket, Identify),
     io:format("Starting loop~n"),
     loop(Socket).
+
+join(Socket, Channel) ->
+    io:format("Joining: ~s~n", [Channel]),
+    send(Socket, "JOIN " ++ Channel).
 
 loop(Socket) ->
     case gen_tcp:recv(Socket, 0) of
 	{ok, Message} ->
-	    [Command|Rest] = string:tokens(Message, " "),
-	    case Command of
-		"PING" ->
-		    io:format("Recieved: ~p~n", Rest),
-		    [Server] = Rest,
-		    Reply = string:concat("PONG ",
-					  string:strip(Server, both, $:)),
-		    io:format("Replying with: ~p~n", [Reply]), 
-		    gen_tcp:send(Socket, Reply),
-		    loop(Socket);
-		"ERROR" ->
-                    io:format("Error, closing connection~n");
-		_ ->
-		    loop(Socket)
-	    end;
+	    Everything = string:tokens(Message, ":\r\n "),
+	    parse(Socket, Everything),
+	    loop(Socket);
 	_ ->
 	    loop(Socket)
     end.
+
+parse(Socket, ["PING", Reply]) ->
+    io:format("Recieved: PING ~s~n", [Reply]),
+    io:format("Replying with: PONG ~s~n", [Reply]), 
+    pong(Socket, Reply);
+parse(Socket, [_, "376"|_]) ->
+    io:format("Recieved end of MOTD, joining channel~n"),
+    join(Socket, "#confab");
+parse(Socket, ["ERROR", Error]) ->
+    io:format("Error: ~p~n", [Error]),
+    close(Socket);
+parse(_Socket, AllThings) ->
+    io:format("~s~n", [string:join(AllThings, " ")]).
+
+pong(Socket, Reply) ->
+    send(Socket, "PONG " ++ Reply).
+
+send(Socket, Message) ->
+    gen_tcp:send(Socket, Message ++ "\r\n").
