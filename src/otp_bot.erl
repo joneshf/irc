@@ -9,7 +9,7 @@
 
 -define(HOST, "chat.freenode.net").
 -define(PORT, 6667).
--define(CHANNEL, "#confab").
+-define(CHANNELS, ["#confab"]).
 -define(NICK, "confabbot").
 -define(USER, "bot bot bot :bot").
 
@@ -30,12 +30,16 @@ connect() ->
     end.
 
 %%% private
+join(Socket, ChannelList) ->
+    io:format("Joining: ~p~n", [ChannelList]),
+    send(Socket, "JOIN " ++ string:join(ChannelList, ",")).
+
 loop(Socket) ->
     case gen_tcp:recv(Socket, 0, 300000) of
-        {ok, Message} ->
+        {ok, RawMessage} ->
             Lines = lists:map(fun(L) ->
-                                      string:tokens(L, ": ") end,
-                              string:tokens(Message, "\r\n")),
+                                      string:tokens(L, " ") end,
+                              string:tokens(RawMessage, "\r\n")),
             parse(Socket, Lines),
             loop(Socket);
         {error, Error} ->
@@ -48,9 +52,28 @@ nick(Socket, Nick) ->
 
 parse(_Socket, []) ->
     done_parsing;
+parse(Socket, [["PING", Reply]|Tail]) ->
+    io:format("Received: PING ~p~nReplying with: PONG ~p~n", [Reply, Reply]),
+    pong(Socket, string:sub_string(Reply, 2)),
+    parse(Socket, Tail);
+parse(Socket, [[Hostmask, "PRIVMSG", Channel|Message]|Tail]) ->
+    [$:|Nick] = string:sub_word(Hostmask, 1, $!),
+    io:format("~s - ~s: ~s~n", [Channel, Nick, string:join(Message, " ")]),
+    parse(Socket, Tail);
+parse(Socket, [[_Server, "376"|_Message]|Tail]) ->
+    io:format("Received end of MOTD, joining channel list~n"),
+    join(Socket, ?CHANNELS),
+    parse(Socket, Tail);
+parse(Socket, [[_Server, "433", _Asterix, Nick|Message]|Tail]) ->
+    io:format("~p~nAdding underscore~n", [string:join(Message, " ")]),
+    nick(Socket, Nick ++ "_"),
+    parse(Socket, Tail);
 parse(Socket, [Line|Tail]) ->
     io:format("~p~n", [string:join(Line, " ")]),
     parse(Socket, Tail).
+
+pong(Socket, Message) ->
+    send(Socket, "PONG " ++ Message).
 
 send(Socket, Message) ->
     gen_tcp:send(Socket, Message ++ "\r\n").
