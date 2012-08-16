@@ -1,0 +1,7 @@
+-define(CHANNELS, ["#confab"]).
+-define(COMMANDS, ["help", "ts"]).
+-define(HOST, "chat.freenode.net").
+-define(NICK, "confabot").
+-define(PORT, 6667).
+-define(TS_API_KEY, "api_key").
+-define(USER, "bot bot bot :bot").
