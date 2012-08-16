@@ -11,6 +11,7 @@
 -define(PORT, 6667).
 -define(CHANNEL, "#confab").
 -define(NICK, "confabbot").
+-define(USER, "bot bot bot :bot").
 
 %%% bot api
 start_link() ->
@@ -20,6 +21,8 @@ connect() ->
     case gen_tcp:connect(?HOST, ?PORT, [{active, false}]) of
         {ok, Socket} ->
             % Set up the nick and user.
+            nick(Socket, ?NICK),
+            user(Socket, ?USER),
             io:format("Got a socket: ~p~n", [Socket]),
             loop(Socket);
         {error, Error} ->
@@ -28,7 +31,7 @@ connect() ->
 
 %%% private
 loop(Socket) ->
-    case gen_tcp:recv(Socket, 0, 30000) of
+    case gen_tcp:recv(Socket, 0, 300000) of
         {ok, Message} ->
             Lines = lists:map(fun(L) ->
                                       string:tokens(L, ": ") end,
@@ -39,11 +42,21 @@ loop(Socket) ->
             io:format("~n~nError: ~p~n~n~n", [Error])
     end.
 
+nick(Socket, Nick) ->
+    io:format("Setting nickname to ~p~n", [Nick]),
+    send(Socket, "NICK " ++ Nick).
+
 parse(_Socket, []) ->
     done_parsing;
 parse(Socket, [Line|Tail]) ->
     io:format("~p~n", [string:join(Line, " ")]),
     parse(Socket, Tail).
+
+send(Socket, Message) ->
+    gen_tcp:send(Socket, Message ++ "\r\n").
+
+user(Socket, User) ->
+    send(Socket, "USER " ++ User).
 
 %%% gen_server
 code_change(_OldVsn, State, _Extra) ->
