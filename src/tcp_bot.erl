@@ -1,4 +1,4 @@
--module(bot).
+-module(tcp_bot).
 -author("Hardy Jones <jones3.hardy@gmail.com>").
 
 -export([connect/0, loop/1]).
@@ -54,8 +54,9 @@ parse(Socket, [["PING", Reply]|Tail]) ->
     io:format("Replying with: PONG ~p~n", [Reply]), 
     pong(Socket, Reply),
     parse(Socket, Tail);
-parse(Socket, [[_User, "PRIVMSG", Channel|Message]|Tail]) ->
-    io:format("Recieved: PRIVMSG ~p~n", [Message]),
+parse(Socket, [[Hostmask, "PRIVMSG", Channel|Message]|Tail]) ->
+    User = string:sub_word(Hostmask, 1, $!),
+    io:format("Recieved: PRIVMSG ~p: ~p~n", [User, string:join(Message, " ")]),
     case Message of
 	[">help"|Rest] ->
 	    HelpMessage = help(Rest),
