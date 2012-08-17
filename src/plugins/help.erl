@@ -5,6 +5,10 @@
 
 -include("../../include/otp_bot.hrl").
 
+parse(["pn"|_Rest]) ->
+    "Polish Notation calculator";
+parse(["rpn"|_Rest]) ->
+    "Reverse Polish Notation calculator";
 parse(["ts"|_Rest]) ->
     "Search for music by album, artist, or song";
 parse(_) ->

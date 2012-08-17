@@ -1,5 +1,5 @@
 -define(CHANNELS, ["#confab", "#python-forum"]).
--define(COMMANDS, ["help", "ts"]).
+-define(COMMANDS, ["help", "pn", "rpn", "ts"]).
 -define(HOST, "chat.freenode.net").
 -define(NICK, "confabot").
 -define(PORT, 6667).

@@ -3,8 +3,6 @@
 
 -export([join/2, nick/2, pong/2, say/3, user/2]).
 
--include("../include/otp_bot.hrl").
-
 join(Socket, ChannelList) ->
     io:format("Joining: ~p~n", [ChannelList]),
     send(Socket, "JOIN " ++ string:join(ChannelList, ",")).

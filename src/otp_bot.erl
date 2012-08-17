@@ -52,6 +52,12 @@ parse(Socket, [[Hostmask, "PRIVMSG", Channel|Message]|Tail]) ->
         [":>help"|Rest] ->
             HelpMessage = help:parse(Rest),
             irc:say(Socket, Channel, HelpMessage);
+        [":>pn"|Line] ->
+            PnMessage = pn:parse(Line),
+            irc:say(Socket, Channel, PnMessage);
+        [":>rpn"|Line] ->
+            RpnMessage = rpn:parse(Line),
+            irc:say(Socket, Channel, RpnMessage);
         [":>ts"|Query] ->
             TsMessage = tiny_song:parse(Query),
             case TsMessage of
