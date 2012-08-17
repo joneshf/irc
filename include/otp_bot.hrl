@@ -1,4 +1,4 @@
--define(CHANNELS, ["#confab"]).
+-define(CHANNELS, ["#confab", "#python-forum"]).
 -define(COMMANDS, ["help", "ts"]).
 -define(HOST, "chat.freenode.net").
 -define(NICK, "confabot").
